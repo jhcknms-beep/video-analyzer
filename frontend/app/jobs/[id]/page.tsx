@@ -31,21 +31,7 @@ function AnalysisResultsWithFrames({ jobId, result }: { jobId: string; result: A
   const urls = frameData.map(f => f.url);
   const isPortrait = frameData.length > 0 && frameData[0].h > frameData[0].w;
 
-  return (
-    <>
-      {frameData.length > 0 && (
-        <div className="flex gap-2 overflow-x-auto pb-2">
-          {frameData.map((f, i) => (
-            <img key={i} src={f.url} alt={`Frame ${i+1}`}
-              className="shrink-0 h-44 object-contain rounded-lg border hover:scale-105 transition-transform cursor-pointer bg-black/30"
-              style={{width:"auto"}}
-              loading="lazy" onClick={() => window.open(f.url, "_blank")} />
-          ))}
-        </div>
-      )}
-      <AnalysisResults result={result} frames={urls} isPortrait={isPortrait} />
-    </>
-  );
+  return <AnalysisResults result={result} frames={urls} />;
 }
 
 export default function JobDetailPage() {

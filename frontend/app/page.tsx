@@ -82,12 +82,12 @@ export default function HomePage() {
     <div className="space-y-8">
       <section className="flex items-end justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Video Analyzer</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Upload videos or paste links to analyze content</p>
+          <h1 className="text-xl font-semibold tracking-tight">Video Analyzer</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">Upload videos or paste links to analyze</p>
         </div>
-        <div className="flex items-center gap-3 text-sm">
-          <div className="flex items-center gap-1.5"><span className="inline-block w-1.5 h-1.5 rounded-full bg-muted-foreground/40"/><span className="text-muted-foreground">{pendingJobs.length} pending</span></div>
-          <div className="flex items-center gap-1.5"><span className="inline-block w-1.5 h-1.5 rounded-full bg-primary/60"/><span className="text-muted-foreground">{activeJobs.length} active</span></div>
+        <div className="flex items-center gap-3 text-xs">
+          <span className="flex items-center gap-1.5 text-muted-foreground"><span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40"/>{pendingJobs.length} pending</span>
+          <span className="flex items-center gap-1.5 text-muted-foreground"><span className="w-1.5 h-1.5 rounded-full bg-primary"/>{activeJobs.length} active</span>
         </div>
       </section>
 
@@ -113,12 +113,11 @@ export default function HomePage() {
               <Play className="h-3.5 w-3.5" /> Analyze Selected ({selected.size})
             </Button>
           </div>
-          <div className="rounded-lg border">
-            <table className="w-full text-sm"><tbody>
-              {allPending.map((j) => (
-                <tr key={j.job_id} className="border-b last:border-0 hover:bg-muted/30" onDoubleClick={() => startRename(j)}>
-                  <td className="p-2 w-8"><Checkbox checked={selected.has(j.job_id)} onCheckedChange={() => toggleSelect(j.job_id)} /></td>
-                  <td className="p-2 max-w-[300px]">
+          <div className="space-y-1.5">
+            {allPending.map((j) => (
+              <div key={j.job_id} className="border-l-4 border-l-transparent hover:border-l-primary bg-card hover:bg-card/80 rounded-r-md border border-border/50 transition-all flex items-center px-3 py-2 gap-3 group" onDoubleClick={() => startRename(j)}>
+                <Checkbox checked={selected.has(j.job_id)} onCheckedChange={() => toggleSelect(j.job_id)} />
+                <div className="flex-1 min-w-0">
                     {editingId === j.job_id ? (
                       <div className="flex items-center gap-1">
                         <input value={editName} onChange={(e) => setEditName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") saveRename(j.job_id); if (e.key === "Escape") setEditingId(null); }} className="bg-transparent border-b border-primary px-1 py-0.5 text-sm w-full outline-none" autoFocus />
@@ -126,19 +125,16 @@ export default function HomePage() {
                         <button onClick={() => setEditingId(null)}><X className="h-4 w-4 text-muted-foreground"/></button>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-1 group cursor-pointer" onClick={() => startRename(j)}>
-                        <span className="font-medium truncate" title={j.filename}>{j.filename}</span>
+                      <div className="flex items-center gap-1 cursor-pointer" onClick={() => startRename(j)}>
+                        <span className="text-sm font-medium truncate" title={j.filename}>{j.filename}</span>
                         <Pencil className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 shrink-0"/>
                       </div>
                     )}
-                  </td>
-                  <td className="p-2 text-xs text-muted-foreground w-16">{j.status === "paused" ? "Paused" : "Pending"}</td>
-                  <td className="p-2 w-20 text-right">
-                    <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => handleDelete(j.job_id)}><Trash2 className="h-3 w-3"/></Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody></table>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground shrink-0">{j.status === "paused" ? "Paused" : "Pending"}</span>
+                  <Button variant="ghost" size="sm" className="h-7 w-7 shrink-0" onClick={() => handleDelete(j.job_id)}><Trash2 className="h-3 w-3"/></Button>
+                </div>
+            ))}
           </div>
         </section>
       )}
@@ -147,18 +143,17 @@ export default function HomePage() {
       {activeJobs.length > 0 && (
         <section className="space-y-3">
           <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Processing ({activeJobs.length})</h2>
-          <div className="rounded-lg border">
-            <table className="w-full text-sm"><tbody>
-              {activeJobs.map((j) => (
-                <tr key={j.job_id} className="border-b last:border-0">
-                  <td className="p-2 font-medium truncate max-w-[300px]" title={j.filename}>{j.filename}</td>
-                  <td className="p-2 w-48"><div className="flex items-center gap-2"><Progress value={j.progress_pct} className="h-1.5 flex-1"/><span className="text-xs text-muted-foreground w-8">{Math.round(j.progress_pct)}%</span></div></td>
-                  <td className="p-2 w-20 text-right">
-                    <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => handlePause(j.job_id)}><Pause className="h-3 w-3"/> Pause</Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody></table>
+          <div className="space-y-1.5">
+            {activeJobs.map((j) => (
+              <div key={j.job_id} className="bg-card border border-border/50 rounded-md flex items-center px-3 py-2.5 gap-3">
+                <span className="text-sm font-medium truncate flex-1" title={j.filename}>{j.filename}</span>
+                <div className="w-40 flex items-center gap-2">
+                  <Progress value={j.progress_pct} className="h-1 flex-1 [&>div]:bg-primary"/>
+                  <span className="text-[10px] text-muted-foreground w-8 text-right">{Math.round(j.progress_pct)}%</span>
+                </div>
+                <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 shrink-0" onClick={() => handlePause(j.job_id)}><Pause className="h-3 w-3"/> Pause</Button>
+              </div>
+            ))}
           </div>
         </section>
       )}

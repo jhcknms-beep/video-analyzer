@@ -8,13 +8,13 @@ import { cn } from "@/lib/utils";
 
 interface Props {
   title: string;
-  icon: string;
+  icon?: string;
   color: string;
   defaultOpen?: boolean;
   children: React.ReactNode;
 }
 
-export function DimensionCard({ title, icon, color, defaultOpen = true, children }: Props) {
+export function DimensionCard({ title, icon = "", color, defaultOpen = true, children }: Props) {
   const [open, setOpen] = useState(defaultOpen);
 
   return (
@@ -24,7 +24,7 @@ export function DimensionCard({ title, icon, color, defaultOpen = true, children
         onClick={() => setOpen(!open)}
       >
         <CardTitle className="text-base flex items-center gap-2">
-          <span className="text-lg">{icon}</span>
+          {icon ? <span className="text-lg">{icon}</span> : null}
           <span className="flex-1">{title}</span>
           {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
         </CardTitle>

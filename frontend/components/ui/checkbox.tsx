@@ -6,9 +6,10 @@ interface CheckboxProps {
   checked?: boolean
   onCheckedChange?: (checked: boolean) => void
   disabled?: boolean
+  className?: string
 }
 
-export function Checkbox({ checked = false, onCheckedChange, disabled }: CheckboxProps) {
+export function Checkbox({ checked = false, onCheckedChange, disabled, className = "" }: CheckboxProps) {
   return (
     <button
       type="button"
@@ -16,7 +17,7 @@ export function Checkbox({ checked = false, onCheckedChange, disabled }: Checkbo
       aria-checked={checked}
       disabled={disabled}
       onClick={() => onCheckedChange?.(!checked)}
-      className={`h-4 w-4 shrink-0 rounded border border-primary/50 flex items-center justify-center transition-colors
+      className={`${className} h-4 w-4 shrink-0 rounded border border-primary/50 flex items-center justify-center transition-colors
         ${checked ? "bg-primary border-primary" : "bg-transparent"}
         hover:border-primary disabled:opacity-50 disabled:cursor-not-allowed`}
     >

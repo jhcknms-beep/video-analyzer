@@ -61,12 +61,12 @@ export function Nav() {
             </span>
             <span className="hidden sm:inline">Video Analyzer</span>
           </Link>
-          <nav className="flex items-center gap-1">
-            <Link href="/" className="px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground rounded-md hover:bg-accent/50 transition-colors">Home</Link>
-            <Link href="/history" className="px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground rounded-md hover:bg-accent/50 transition-colors relative">
+          <nav className="flex items-center gap-0.5">
+            <Link href="/" className="px-3 py-1.5 text-xs font-medium text-foreground/80 hover:text-foreground rounded transition-colors border-b-2 border-transparent hover:border-primary/50">Home</Link>
+            <Link href="/history" className="px-3 py-1.5 text-xs font-medium text-foreground/80 hover:text-foreground rounded transition-colors border-b-2 border-transparent hover:border-primary/50 relative">
               History
               {unviewed > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 bg-primary text-primary-foreground text-[10px] font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-1">{unviewed}</span>
+                <span className="absolute -top-0.5 -right-1 bg-primary text-primary-foreground text-[10px] font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-1">{unviewed}</span>
               )}
             </Link>
           </nav>
@@ -83,7 +83,7 @@ export function Nav() {
             </select>
           )}
           <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-            <span className={`inline-block h-2 w-2 rounded-full ${isConnected ? "bg-emerald-400" : "bg-red-400"}`} />
+            <span className={`inline-block h-2 w-2 rounded-full ${isConnected ? "bg-emerald-400 animate-pulse-dot" : "bg-red-400"}`} />
             {isConnected ? "Live" : "Offline"}
           </span>
         </div>

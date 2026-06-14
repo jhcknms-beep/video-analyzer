@@ -39,7 +39,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} font-sans min-h-screen bg-background text-foreground antialiased`}
       >
         <Nav />
-        <main className="mx-auto max-w-7xl px-8 py-10">{children}</main>
+        <main className="mx-auto max-w-7xl px-10 py-12">{children}</main>
         <Toaster position="top-right" richColors closeButton />
       </body>
     </html>

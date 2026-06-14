@@ -107,71 +107,39 @@ export default function HistoryPage() {
           <p className="text-lg">No completed analyses</p>
         </div>
       ) : (
-        <div className="rounded-lg border">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b bg-muted/50">
-                <th className="w-10 p-3">
-                  <Checkbox checked={selected.size === completed.length && completed.length > 0} onCheckedChange={toggleAll} />
-                </th>
-                <th className="p-3 text-left font-medium">Name</th>
-                <th className="p-3 text-left font-medium w-16">Duration</th>
-                <th className="p-3 text-left font-medium w-20">Processed</th>
-                <th className="p-3 text-left font-medium w-20">Status</th>
-                <th className="p-3 text-right font-medium w-16">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {completed.map((job) => {
-                const isUnviewed = !viewed.includes(job.job_id);
-                return (
-                <tr key={job.job_id} className={`border-b hover:bg-muted/30 transition-colors ${isUnviewed ? "bg-primary/5" : ""}`}>
-                  <td className="p-3">
-                    <Checkbox checked={selected.has(job.job_id)} onCheckedChange={() => toggle(job.job_id)} />
-                  </td>
-                  <td className="p-3" onDoubleClick={() => startEdit(job)}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          {completed.map((job) => {
+            const isUnviewed = !viewed.includes(job.job_id);
+            return (
+              <div key={job.job_id} className={`bg-card border rounded-lg p-4 hover:border-primary/30 hover:-translate-y-0.5 transition-all ${isUnviewed ? "border-l-2 border-l-primary bg-primary/5" : "border-border/50"}`} onDoubleClick={() => startEdit(job)}>
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <Checkbox checked={selected.has(job.job_id)} onCheckedChange={() => toggle(job.job_id)} className="shrink-0" />
                     {editId === job.job_id ? (
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1 flex-1">
                         <input value={editVal} onChange={(e) => setEditVal(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") saveEdit(job.job_id); if (e.key === "Escape") setEditId(null); }} className="bg-transparent border-b border-primary px-1 py-0.5 text-sm w-full outline-none" autoFocus />
                         <button onClick={() => saveEdit(job.job_id)}><Check className="h-4 w-4 text-green-500" /></button>
                         <button onClick={() => setEditId(null)}><X className="h-4 w-4 text-muted-foreground" /></button>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-2 group cursor-pointer" onClick={() => startEdit(job)}>
-                        {isUnviewed && <Circle className="h-2 w-2 fill-primary text-primary shrink-0" />}
-                        <p className={`font-medium truncate max-w-[240px] ${isUnviewed ? "text-foreground" : ""}`} title={job.filename}>{job.filename}</p>
-                        <Pencil className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 shrink-0" />
-                      </div>
+                      <span className="text-sm font-medium truncate cursor-pointer flex-1" title={job.filename}>
+                        {isUnviewed && <Circle className="h-1.5 w-1.5 inline-block fill-primary text-primary mr-1.5 -mt-0.5" />}
+                        {job.filename}
+                      </span>
                     )}
-                  </td>
-                  <td className="p-3 text-muted-foreground">
-                    {job.video_duration_seconds ? `${Math.round(job.video_duration_seconds)}s` : "-"}
-                  </td>
-                  <td className="p-3 text-muted-foreground">
-                    {job.processing_time_seconds
-                      ? job.processing_time_seconds >= 60
-                        ? `${Math.floor(job.processing_time_seconds / 60)}m ${Math.round(job.processing_time_seconds % 60)}s`
-                        : `${Math.round(job.processing_time_seconds)}s`
-                      : "-"}
-                  </td>
-                  <td className="p-3">
-                    <Badge variant="default" className="text-xs bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200">done</Badge>
-                  </td>
-                  <td className="p-3 text-right">
-                    <div className="flex items-center justify-end gap-0.5">
-                      <Link href={`/jobs/${job.job_id}`}>
-                        <Button variant="ghost" size="sm" className="h-7 text-xs">View</Button>
-                      </Link>
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDelete(job.job_id)} title="Delete">
-                        <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                  </div>
+                  <Badge variant="default" className="text-[10px] shrink-0 bg-emerald-400/20 text-emerald-400 border-0">done</Badge>
+                </div>
+                <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                  <span>{job.video_duration_seconds ? `${Math.round(job.video_duration_seconds)}s` : "-"}{job.processing_time_seconds ? ` · ${job.processing_time_seconds >= 60 ? Math.floor(job.processing_time_seconds/60)+"m" : Math.round(job.processing_time_seconds)+"s"}` : ""}</span>
+                  <div className="flex items-center gap-0.5">
+                    <Link href={`/jobs/${job.job_id}`}><Button variant="ghost" size="sm" className="h-6 text-[11px]">View</Button></Link>
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleDelete(job.job_id)}><Trash2 className="h-3 w-3 text-muted-foreground"/></Button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
