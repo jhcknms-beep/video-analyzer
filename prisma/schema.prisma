@@ -1,0 +1,56 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Video {
+  id        String   @id @default(uuid())
+  url       String
+  platform  String   @default("unknown")
+  title     String?
+  status    String   @default("pending")
+  error     String?
+  filePath  String?
+  fileSize  Int?
+  duration  Float?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  analyses Analysis[]
+  tasks    Task[]
+}
+
+model Analysis {
+  id        String   @id @default(uuid())
+  videoId   String
+  type      String
+  summary   String?
+  tags      String?
+  sentiment String?
+  rawResult String?
+  createdAt DateTime @default(now())
+
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+}
+
+model Task {
+  id        String   @id @default(uuid())
+  videoId   String
+  type      String
+  status    String   @default("pending")
+  progress  Int      @default(0)
+  error     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+}
+
+model Settings {
+  key   String @id
+  value String
+}

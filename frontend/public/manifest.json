@@ -1,0 +1,17 @@
+{
+  "name": "短视频批量分析工具",
+  "short_name": "视频分析",
+  "description": "基于 Qwen3-VL-8B 的 AI 短视频内容分析平台",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#12141a",
+  "theme_color": "#14b8a6",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

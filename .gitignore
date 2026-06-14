@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+
+# Build outputs
+.next/
+out/
+build/
+
+# Runtime data
+data/
+
+# Env
+.env*
+
+# IDE
+.vscode/
+.idea/
+
+# Misc
+.DS_Store
+*.pem
+*.tsbuildinfo
+next-env.d.ts
