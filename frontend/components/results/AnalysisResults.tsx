@@ -6,9 +6,10 @@ import { DimensionCard, ScoreBadge, TagList, KVList, BulletList } from "./Dimens
 interface Props {
   result: AnalysisResult;
   frames?: string[];
+  isPortrait?: boolean;
 }
 
-export function AnalysisResults({ result, frames = [] }: Props) {
+export function AnalysisResults({ result, frames = [], isPortrait = false }: Props) {
   const { content_and_tags, target_audience, user_needs, value_shaping, cta_analysis } = result;
   const f = (i: number) => frames[i] || undefined;
 
@@ -21,7 +22,7 @@ export function AnalysisResults({ result, frames = [] }: Props) {
             <p className="text-sm text-muted-foreground leading-relaxed">{content_and_tags.content_description || "N/A"}</p>
             <div><h4 className="text-sm font-medium mb-1">Tags</h4><TagList tags={content_and_tags.auto_tags} /></div>
           </div>
-          {f(0) && <img src={f(0)} className="rounded-md border object-cover w-full aspect-video" />}
+          {f(0) && <img src={f(0)} className={`rounded-md border w-full ${isPortrait ? "object-contain" : "object-cover aspect-video"}`} />}
         </div>
       </DimensionCard>
 
@@ -38,7 +39,7 @@ export function AnalysisResults({ result, frames = [] }: Props) {
               <div><h4 className="text-sm font-medium mb-1 text-orange-600">Weaknesses</h4><BulletList items={content_and_tags.marketing_copy.copy_weaknesses} /></div>
             </div>
           </div>
-          {f(1) && <img src={f(1)} className="rounded-md border object-cover w-full aspect-video" />}
+          {f(1) && <img src={f(1)} className={`rounded-md border w-full ${isPortrait ? "object-contain" : "object-cover aspect-video"}`} />}
         </div>
       </DimensionCard>
 
@@ -62,7 +63,7 @@ export function AnalysisResults({ result, frames = [] }: Props) {
               <p className="text-sm mt-1">{content_and_tags.content_structure.closing.description}</p>
             </div>
           </div>
-          {f(2) && <img src={f(2)} className="rounded-md border object-cover w-full aspect-video" />}
+          {f(2) && <img src={f(2)} className={`rounded-md border w-full ${isPortrait ? "object-contain" : "object-cover aspect-video"}`} />}
         </div>
       </DimensionCard>
 
@@ -75,7 +76,7 @@ export function AnalysisResults({ result, frames = [] }: Props) {
             <div><h4 className="text-sm font-medium mb-1">Pain Points</h4><BulletList items={target_audience.pain_points_addressed} /></div>
             <div><h4 className="text-sm font-medium mb-1">Signals</h4><BulletList items={target_audience.audience_signals} /></div>
           </div>
-          {f(3) && <img src={f(3)} className="rounded-md border object-cover w-full aspect-video" />}
+          {f(3) && <img src={f(3)} className={`rounded-md border w-full ${isPortrait ? "object-contain" : "object-cover aspect-video"}`} />}
         </div>
       </DimensionCard>
 
@@ -89,7 +90,7 @@ export function AnalysisResults({ result, frames = [] }: Props) {
               <div><h4 className="text-sm font-medium mb-1">Implicit Needs</h4><BulletList items={user_needs.implicit_needs} /></div>
             </div>
           </div>
-          {f(4) && <img src={f(4)} className="rounded-md border object-cover w-full aspect-video" />}
+          {f(4) && <img src={f(4)} className={`rounded-md border w-full ${isPortrait ? "object-contain" : "object-cover aspect-video"}`} />}
         </div>
       </DimensionCard>
 
@@ -115,7 +116,7 @@ export function AnalysisResults({ result, frames = [] }: Props) {
               </div>
             )}
           </div>
-          {f(5) && <img src={f(5)} className="rounded-md border object-cover w-full aspect-video" />}
+          {f(5) && <img src={f(5)} className={`rounded-md border w-full ${isPortrait ? "object-contain" : "object-cover aspect-video"}`} />}
         </div>
       </DimensionCard>
 
@@ -129,7 +130,7 @@ export function AnalysisResults({ result, frames = [] }: Props) {
             <div><h4 className="text-sm font-medium mb-1 text-orange-600">Friction Points</h4><BulletList items={cta_analysis.conversion_friction_points} /></div>
             <div><h4 className="text-sm font-medium mb-1 text-green-600">Suggestions</h4><BulletList items={cta_analysis.cta_improvement_suggestions} /></div>
           </div>
-          {f(6) && <img src={f(6)} className="rounded-md border object-cover w-full aspect-video" />}
+          {f(6) && <img src={f(6)} className={`rounded-md border w-full ${isPortrait ? "object-contain" : "object-cover aspect-video"}`} />}
         </div>
       </DimensionCard>
     </div>

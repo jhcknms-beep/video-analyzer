@@ -1,94 +1,122 @@
-// Video Analyzer - Desktop Wrapper
-// Opens the app in a frameless Chrome window for native desktop feel.
-// Requires: Chrome or Edge installed.
-
-const { exec, spawn } = require("child_process");
+const { app, BrowserWindow, Menu, Tray, nativeImage } = require("electron");
+const { spawn } = require("child_process");
 const path = require("path");
 const http = require("http");
+const fs = require("fs");
 
 const ROOT = path.resolve(__dirname, "..");
-const BACKEND_DIR = path.join(ROOT, "backend");
-const FRONTEND_URL = "http://localhost:3000";
+let mainWindow = null;
+let backendProc = null;
+let frontendProc = null;
+let tray = null;
 
-// 1. Start backend
+process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = "1";
+
+// ── Kill old processes ──
+function killOld() {
+  try { require("child_process").execSync("taskkill /f /im python.exe 2>nul & taskkill /f /im pythonw.exe 2>nul", { shell: "cmd.exe", stdio: "ignore" }); } catch {}
+}
+
+// ── Start backend ──
 function startBackend() {
-  const proc = spawn("pythonw", ["-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8001"], {
-    cwd: BACKEND_DIR,
+  const pythonPath = path.join(
+    process.env.LOCALAPPDATA,
+    "Programs/Python/Python312/pythonw.exe"
+  );
+  backendProc = spawn(pythonPath, ["-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8001"], {
+    cwd: path.join(ROOT, "backend"),
     windowsHide: true,
     stdio: "ignore",
     detached: true,
   });
-  proc.unref();
+  backendProc.unref();
 }
 
-// 2. Start frontend
+// ── Start frontend ──
 function startFrontend() {
-  const proc = spawn("cmd", ["/c", "npm run dev"], {
+  const cmd = process.platform === "win32" ? "cmd" : "bash";
+  const args = process.platform === "win32" ? ["/c", "npm run dev"] : ["-c", "npm run dev"];
+  frontendProc = spawn(cmd, args, {
     cwd: path.join(ROOT, "frontend"),
     windowsHide: true,
     stdio: "ignore",
     detached: true,
   });
-  proc.unref();
+  frontendProc.unref();
 }
 
-// 3. Wait for frontend to be ready, then open app window
-function waitForServer(url, retries = 60) {
+// ── Wait for server ──
+function waitFor(url, retries = 80) {
   return new Promise((resolve, reject) => {
-    function check() {
+    const check = () => {
       http.get(url, (res) => {
         if (res.statusCode === 200) resolve();
         else if (retries-- > 0) setTimeout(check, 1000);
-        else reject(new Error("Server not ready"));
+        else reject(new Error("Server timeout"));
       }).on("error", () => {
         if (retries-- > 0) setTimeout(check, 1000);
         else reject(new Error("Server not ready"));
       });
-    }
+    };
     check();
   });
 }
 
-async function main() {
-  console.log("Starting Video Analyzer...");
-  startBackend();
-  startFrontend();
-  console.log("Waiting for services...");
+// ── Create window ──
+function createWindow() {
+  mainWindow = new BrowserWindow({
+    width: 1440,
+    height: 920,
+    minWidth: 900,
+    minHeight: 600,
+    title: "Video Analyzer",
+    backgroundColor: "#141414",
+    show: false,
+    icon: path.join(ROOT, "frontend", "public", "icon.svg"),
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+    },
+  });
 
-  try {
-    await waitForServer("http://localhost:3000");
-  } catch {
-    console.log("Server timeout — please start manually.");
-    process.exit(1);
-  }
+  mainWindow.setMenuBarVisibility(false);
+  mainWindow.loadURL("http://localhost:3000");
 
-  // Open in Chrome app mode (frameless window)
-  const chromePaths = [
-    "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-    "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
-    process.env.LOCALAPPDATA + "\\Google\\Chrome\\Application\\chrome.exe",
-  ];
+  mainWindow.once("ready-to-show", () => {
+    mainWindow.show();
+  });
 
-  let chrome = null;
-  for (const cp of chromePaths) {
-    try { require("fs").accessSync(cp); chrome = cp; break; } catch {}
-  }
-
-  if (chrome) {
-    spawn(chrome, [
-      `--app=${FRONTEND_URL}`,
-      "--window-size=1400,900",
-      "--window-position=center",
-    ], { detached: true, stdio: "ignore" }).unref();
-  } else {
-    // Fallback: open in default browser
-    const { exec } = require("child_process");
-    exec(`start ${FRONTEND_URL}`);
-  }
-
-  console.log("Desktop app launched!");
-  // Keep alive briefly then exit
-  setTimeout(() => process.exit(0), 3000);
+  mainWindow.on("closed", () => {
+    mainWindow = null;
+  });
 }
 
-main();
+// ── App lifecycle ──
+app.whenReady().then(async () => {
+  killOld();
+  startBackend();
+  startFrontend();
+
+  try {
+    await Promise.all([
+      waitFor("http://localhost:8001/health"),
+      waitFor("http://localhost:3000"),
+    ]);
+  } catch (e) {
+    console.error("Startup failed:", e.message);
+  }
+
+  createWindow();
+
+  app.on("activate", () => {
+    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+  });
+});
+
+app.on("window-all-closed", () => {
+  app.quit();
+});
+
+app.on("before-quit", () => {
+  killOld();
+});

@@ -133,6 +133,7 @@ class JobMeta(BaseModel):
     file_size_bytes: int
     video_duration_seconds: Optional[float] = None
     processing_time_seconds: Optional[float] = None
+    completed_at: Optional[str] = None
     status: JobStatus = JobStatus.QUEUED
     progress_pct: float = 0.0
     current_step: str = ""

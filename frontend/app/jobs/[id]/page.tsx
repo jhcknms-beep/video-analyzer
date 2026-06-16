@@ -31,7 +31,7 @@ function AnalysisResultsWithFrames({ jobId, result }: { jobId: string; result: A
   const urls = frameData.map(f => f.url);
   const isPortrait = frameData.length > 0 && frameData[0].h > frameData[0].w;
 
-  return <AnalysisResults result={result} frames={urls} />;
+  return <AnalysisResults result={result} frames={urls} isPortrait={isPortrait} />;
 }
 
 export default function JobDetailPage() {

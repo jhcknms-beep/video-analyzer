@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { ArrowLeft, Sheet, Loader2, Circle, Pencil, Check, X, Trash2 } from "lucide-react";
+import { ArrowLeft, Sheet, Loader2, Circle, Pencil, Check, X, Trash2, LayoutGrid, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -16,6 +16,7 @@ interface Job {
   created_at: string;
   video_duration_seconds: number | null;
   processing_time_seconds: number | null;
+  completed_at: string | null;
   error: string | null;
 }
 
@@ -39,6 +40,7 @@ export default function HistoryPage() {
   const [viewed, setViewed] = useState<string[]>(() => {
     try { return JSON.parse(localStorage.getItem("va_viewed") || "[]"); } catch { return []; }
   });
+  const [viewGrid, setViewGrid] = useState(true);
   const [editId, setEditId] = useState<string | null>(null);
   const [editVal, setEditVal] = useState("");
 
@@ -92,12 +94,17 @@ export default function HistoryPage() {
           <h1 className="text-xl font-semibold">History</h1>
           <span className="text-sm text-muted-foreground">{completed.length} completed</span>
         </div>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setViewGrid(!viewGrid)} title={viewGrid ? "List view" : "Grid view"}>
+            {viewGrid ? <List className="h-4 w-4" /> : <LayoutGrid className="h-4 w-4" />}
+          </Button>
         {selected.size > 0 && (
           <Button onClick={exportSheet} disabled={exporting} size="sm" className="gap-2">
             {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sheet className="h-4 w-4" />}
             Export {selected.size} to Feishu Sheet
           </Button>
         )}
+        </div>
       </div>
 
       {loading ? (
@@ -107,6 +114,7 @@ export default function HistoryPage() {
           <p className="text-lg">No completed analyses</p>
         </div>
       ) : (
+        viewGrid ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {completed.map((job) => {
             const isUnviewed = !viewed.includes(job.job_id);
@@ -131,7 +139,11 @@ export default function HistoryPage() {
                   <Badge variant="default" className="text-[10px] shrink-0 bg-emerald-400/20 text-emerald-400 border-0">done</Badge>
                 </div>
                 <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                  <span>{job.video_duration_seconds ? `${Math.round(job.video_duration_seconds)}s` : "-"}{job.processing_time_seconds ? ` · ${job.processing_time_seconds >= 60 ? Math.floor(job.processing_time_seconds/60)+"m" : Math.round(job.processing_time_seconds)+"s"}` : ""}</span>
+                  <span>
+                    {job.video_duration_seconds ? `${Math.round(job.video_duration_seconds)}s` : "-"}
+                    {job.processing_time_seconds ? ` · ${job.processing_time_seconds >= 60 ? Math.floor(job.processing_time_seconds/60)+"m" : Math.round(job.processing_time_seconds)+"s"}` : ""}
+                    {job.completed_at ? ` · ${new Date(job.completed_at).toLocaleDateString()}` : ""}
+                  </span>
                   <div className="flex items-center gap-0.5">
                     <Link href={`/jobs/${job.job_id}`}><Button variant="ghost" size="sm" className="h-6 text-[11px]">View</Button></Link>
                     <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleDelete(job.job_id)}><Trash2 className="h-3 w-3 text-muted-foreground"/></Button>
@@ -141,6 +153,19 @@ export default function HistoryPage() {
             );
           })}
         </div>
+        ) : (
+        <div className="rounded-lg border"><table className="w-full text-sm"><tbody>
+          {completed.map((job) => (
+            <tr key={job.job_id} className="border-b last:border-0 hover:bg-muted/30">
+              <td className="p-2 w-8"><Checkbox checked={selected.has(job.job_id)} onCheckedChange={() => toggle(job.job_id)} /></td>
+              <td className="p-2 font-medium truncate max-w-[300px]">{job.filename}</td>
+              <td className="p-2 text-muted-foreground text-xs w-16">{job.video_duration_seconds ? `${Math.round(job.video_duration_seconds)}s` : "-"}</td>
+              <td className="p-2 text-muted-foreground text-xs w-28">{job.completed_at ? new Date(job.completed_at).toLocaleDateString() : "-"}</td>
+              <td className="p-2 w-20 text-right"><Link href={`/jobs/${job.job_id}`}><Button variant="ghost" size="sm" className="h-7 text-xs">View</Button></Link></td>
+            </tr>
+          ))}
+        </tbody></table></div>
+        )
       )}
     </div>
   );

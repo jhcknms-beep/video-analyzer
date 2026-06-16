@@ -164,6 +164,11 @@ async def process_job(
     )
     await file_store.save_results(job_id, job_result)
 
+    # Save completion timestamp to meta
+    completed_at = datetime.now(timezone.utc).isoformat()
+    meta.completed_at = completed_at
+    await file_store.save_progress(job_id, meta)
+
     await job_manager.update_status(
         job_id, status=JobStatus.COMPLETED,
         progress_pct=100, current_step="completed",

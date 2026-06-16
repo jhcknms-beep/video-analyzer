@@ -120,6 +120,10 @@ async def get_status(ids: Optional[str] = Query(None)):
                     job.video_duration_seconds = r["video_duration_seconds"]
                 if r.get("processing_time_seconds"):
                     job.processing_time_seconds = r["processing_time_seconds"]
+                if job.completed_at is None:
+                    p = _file_store._read_json(_file_store.job_dir(job.job_id) / "progress.json")
+                    if p and p.get("completed_at"):
+                        job.completed_at = p["completed_at"]
     return StatusResponse(jobs=all_jobs)
 
 
