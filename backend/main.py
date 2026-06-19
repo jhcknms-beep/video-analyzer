@@ -21,6 +21,8 @@ from services.llm_client import llm_client
 from api.routes_videos import router as videos_router, init as videos_init
 from api.routes_ws import router as ws_router, init as ws_init, WebSocketManager
 from api.routes_models import router as models_router
+from api.routes_auth import router as auth_router
+from middleware.auth_middleware import AuthMiddleware
 
 
 @asynccontextmanager
@@ -82,16 +84,20 @@ app = FastAPI(
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins,
+    allow_origins=["*"],  # Allow LAN access
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# Auth (protects non-public routes)
+app.add_middleware(AuthMiddleware)
+
 # Routes
 app.include_router(videos_router)
 app.include_router(ws_router)
 app.include_router(models_router)
+app.include_router(auth_router)
 
 
 @app.get("/health")

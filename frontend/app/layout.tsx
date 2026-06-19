@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
 import { Nav } from "@/components/layout/Nav";
+import { AuthGuard } from "@/components/layout/AuthGuard";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -38,8 +39,10 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} font-sans min-h-screen bg-background text-foreground antialiased`}
       >
-        <Nav />
-        <main className="mx-auto max-w-7xl px-10 py-12">{children}</main>
+        <AuthGuard>
+          <Nav />
+          <main className="mx-auto max-w-7xl px-10 py-12">{children}</main>
+        </AuthGuard>
         <Toaster position="top-right" richColors closeButton />
       </body>
     </html>

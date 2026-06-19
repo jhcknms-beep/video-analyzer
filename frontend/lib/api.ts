@@ -1,11 +1,17 @@
 const API_BASE = "http://localhost:8001";
 
+function authHeaders(): Record<string, string> {
+  const token = typeof window !== "undefined" ? localStorage.getItem("va_token") : null;
+  return token ? { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } : { "Content-Type": "application/json" };
+}
+
 export async function uploadVideos(files: File[]): Promise<{ jobs: import("./types").JobMeta[] }> {
   const form = new FormData();
   files.forEach((f) => form.append("files", f));
 
   const res = await fetch(`${API_BASE}/api/videos/upload`, {
     method: "POST",
+    headers: { Authorization: `Bearer ${localStorage.getItem("va_token") || ""}` },
     body: form,
   });
   if (!res.ok) {
@@ -17,7 +23,7 @@ export async function uploadVideos(files: File[]): Promise<{ jobs: import("./typ
 
 export async function getStatus(ids?: string[]): Promise<{ jobs: import("./types").JobMeta[] }> {
   const params = ids?.length ? `?ids=${ids.join(",")}` : "";
-  const res = await fetch(`${API_BASE}/api/videos/status${params}`);
+  const res = await fetch(`${API_BASE}/api/videos/status${params}`, { headers: authHeaders() });
   if (!res.ok) throw new Error("Failed to fetch status");
   return res.json();
 }
@@ -40,7 +46,7 @@ export async function downloadFromUrl(url: string): Promise<{
 }> {
   const res = await fetch(`${API_BASE}/api/videos/download`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: authHeaders(),
     body: JSON.stringify({ url }),
   });
   if (!res.ok) {
@@ -53,7 +59,7 @@ export async function downloadFromUrl(url: string): Promise<{
 export async function exportFeishuSheet(jobIds: string[]): Promise<{ url: string; count: number }> {
   const res = await fetch(`${API_BASE}/api/videos/export-feishu-sheet`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: authHeaders(),
     body: JSON.stringify({ job_ids: jobIds }),
   });
   if (!res.ok) {
@@ -66,7 +72,7 @@ export async function exportFeishuSheet(jobIds: string[]): Promise<{ url: string
 export async function exportFeishu(jobId: string): Promise<{ url: string; message: string }> {
   const res = await fetch(`${API_BASE}/api/videos/${jobId}/export-feishu`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: authHeaders(),
     body: JSON.stringify({}),
   });
   if (!res.ok) {
@@ -80,7 +86,7 @@ export async function startJob(jobId: string): Promise<void> {
   await fetch(`${API_BASE}/api/videos/${jobId}/start`, { method: "POST" });
 }
 export async function startBatch(jobIds: string[]): Promise<void> {
-  await fetch(`${API_BASE}/api/videos/start-batch`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ job_ids: jobIds }) });
+  await fetch(`${API_BASE}/api/videos/start-batch`, { method: "POST", headers: authHeaders(), body: JSON.stringify({ job_ids: jobIds }) });
 }
 export async function pauseJob(jobId: string): Promise<void> {
   await fetch(`${API_BASE}/api/videos/${jobId}/pause`, { method: "POST" });
@@ -89,7 +95,7 @@ export async function pauseJob(jobId: string): Promise<void> {
 export async function renameJob(jobId: string, name: string): Promise<void> {
   const res = await fetch(`${API_BASE}/api/videos/${jobId}/rename`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
+    headers: authHeaders(),
     body: JSON.stringify({ name }),
   });
   if (!res.ok) throw new Error("Rename failed");

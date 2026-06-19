@@ -31,6 +31,10 @@ class Settings(BaseSettings):
     feishu_app_secret: str = ""
     feishu_folder_token: str = ""
 
+    # Auth
+    auth_password: str = "admin123"
+    auth_secret: str = "change-me-to-a-random-string"
+
     # Server
     host: str = "0.0.0.0"
     port: int = 8001
