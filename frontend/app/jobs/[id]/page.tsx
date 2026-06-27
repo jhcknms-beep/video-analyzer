@@ -15,7 +15,7 @@ import type { JobResult, AnalysisResult } from "@/lib/types";
 function AnalysisResultsWithFrames({ jobId, result }: { jobId: string; result: AnalysisResult }) {
   const [frameData, setFrameData] = useState<{url:string;w:number;h:number}[]>([]);
   useEffect(() => {
-    fetch(`http://localhost:8001/api/videos/${jobId}/frames`)
+    fetch(`http://localhost:8001/api/videos/${jobId}/frames`, { headers: { Authorization: `Bearer ${localStorage.getItem("va_token") || ""}` } })
       .then((r) => r.json())
       .then((d) => {
         const items = (d.frames || []).map((f: any) => ({
@@ -55,8 +55,8 @@ export default function JobDetailPage() {
           clearInterval(interval);
           setLoading(false);
           if (data.status === "completed") {
-            const viewed = JSON.parse(localStorage.getItem("va_viewed") || "[]");
-            if (!viewed.includes(id)) { viewed.push(id); localStorage.setItem("va_viewed", JSON.stringify(viewed)); }
+          const token = localStorage.getItem("va_token");
+          fetch(`http://localhost:8001/api/auth/viewed/${id}`, { method: "POST", headers: { Authorization: `Bearer ${token || ""}` } }).catch(() => {});
           }
         }
       } catch (err: any) {
@@ -102,7 +102,7 @@ export default function JobDetailPage() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-xl font-bold">{result?.filename || "分析结果"}</h1>
+            <h1 className="text-xl font-bold">{result?.original_filename || result?.filename || "分析结果"}</h1>
             <div className="flex items-center gap-2 mt-1">
               {result && (
                 <StatusBadge

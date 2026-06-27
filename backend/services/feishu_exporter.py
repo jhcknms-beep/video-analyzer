@@ -32,7 +32,7 @@ def _build_markdown(results: dict) -> str:
     body = cs.get("body", {})
     closing = cs.get("closing", {})
 
-    title = results.get("filename", "Untitled")
+    title = results.get("original_filename") or results.get("filename", "Untitled")
     duration = results.get("video_duration_seconds", 0)
     proc = results.get("processing_time_seconds", 0)
 
@@ -143,7 +143,7 @@ async def export_to_feishu(
     app_secret: str = "",
     folder_token: str = "",
 ) -> str:
-    """Create Feishu doc + import markdown + insert images. Returns doc URL."""
+    """Create Feishu doc with markdown + inline screenshots. Returns doc URL."""
 
     app_id, app_secret, folder_token = _get_creds(app_id, app_secret, folder_token)
 
@@ -160,33 +160,8 @@ async def export_to_feishu(
         tr.raise_for_status()
         token = tr.json()["tenant_access_token"]
 
-        # Step 2: Upload keyframe screenshots (use files API - no drive:drive needed)
-        image_urls = []
-        for fp in sorted(frames_dir.rglob("*.jpg"))[:6]:
-            try:
-                with open(fp, "rb") as f:
-                    img_data = f.read()
-                ur = await client.post(
-                    f"{FEISHU_BASE}/drive/v1/files/upload_all",
-                    headers={"Authorization": f"Bearer {token}"},
-                    data={
-                        "file_name": fp.name,
-                        "parent_type": "explorer",
-                        "parent_node": "",
-                        "size": str(len(img_data)),
-                    },
-                    files={"file": (fp.name, img_data, "image/jpeg")},
-                )
-                if ur.status_code == 200:
-                    data = ur.json().get("data", {})
-                    url = data.get("url", "")
-                    if url:
-                        image_urls.append({"name": fp.stem, "url": url})
-            except Exception:
-                pass
-
-        # Step 3: Create empty document
-        title = results.get("filename", "Video Analysis")[:100]
+        # Step 2: Create document
+        title = (results.get("original_filename") or results.get("filename", "Video Analysis"))[:100]
         body = {"title": title}
         if folder_token:
             body["folder_token"] = folder_token
@@ -199,31 +174,12 @@ async def export_to_feishu(
         cr.raise_for_status()
         doc_id = cr.json()["data"]["document"]["document_id"]
 
-        # Step 4: Write markdown, then insert screenshot links after each divider
+        # Step 3: Write text content in batches
         md = _build_markdown(results)
         blocks = _md_to_blocks(md)
-        img_idx = 0
-        result_blocks = []
-        for b in blocks:
-            result_blocks.append(b)
-            # After each section divider (---), insert the next screenshot link
-            if b.get("block_type") == 22 and img_idx < len(image_urls):
-                img = image_urls[img_idx]
-                result_blocks.append({
-                    "block_type": 2,
-                    "text": {
-                        "elements": [
-                            {"text_run": {"content": f"Screenshot: {img['name']}", "text_element_style": {"link": {"url": img['url']}}}},
-                        ],
-                        "style": {},
-                    },
-                })
-                img_idx += 1
-        blocks = result_blocks
-
-        # Write blocks in batches via POST
-        for i in range(0, len(blocks), 50):
-            batch = blocks[i:i + 50]
+        batch_size = 15
+        for i in range(0, len(blocks), batch_size):
+            batch = blocks[i:i + batch_size]
             wr = await client.post(
                 f"{FEISHU_BASE}/docx/v1/documents/{doc_id}/blocks/{doc_id}/children",
                 headers={"Authorization": f"Bearer {token}"},
@@ -231,6 +187,51 @@ async def export_to_feishu(
             )
             if wr.status_code >= 400:
                 raise RuntimeError(f"Write error ({wr.status_code}): {wr.text[:300]}")
+            # Small delay to avoid rate limits
+            await asyncio.sleep(0.5)
+
+        # Step 4: Insert screenshots between sections
+        frame_files = sorted(frames_dir.rglob("*.jpg"))[:6]
+        print(f"[EXPORT v4] {len(blocks)} blocks, {len(frame_files)} frames")
+
+        # Find divider positions in the original blocks array
+        divider_positions = [i for i, b in enumerate(blocks) if b.get("block_type") == 22]
+
+        img_pair = []  # (frame_path, div_position)
+        for idx, div_pos in enumerate(divider_positions):
+            if idx < len(frame_files):
+                # Insert image at position: divider + 1 + offset from previous insertions
+                insert_pos = div_pos + 1 + idx
+                br = await client.post(
+                    f"{FEISHU_BASE}/docx/v1/documents/{doc_id}/blocks/{doc_id}/children",
+                    headers={"Authorization": f"Bearer {token}"},
+                    json={"children": [{"block_type": 27, "image": {}}], "index": insert_pos},
+                )
+                if br.status_code == 200:
+                    block_id = br.json()["data"]["children"][0]["block_id"]
+                    img_pair.append((frame_files[idx], block_id))
+                await asyncio.sleep(0.3)
+
+        # Upload images and set tokens
+        for fp, block_id in img_pair:
+            try:
+                with open(fp, "rb") as f:
+                    img_data = f.read()
+                ur = await client.post(
+                    f"{FEISHU_BASE}/drive/v1/medias/upload_all",
+                    headers={"Authorization": f"Bearer {token}"},
+                    data={"file_name": fp.name, "parent_type": "docx_image", "parent_node": block_id, "size": str(len(img_data))},
+                    files={"file": (fp.name, img_data, "image/jpeg")},
+                )
+                if ur.status_code == 200:
+                    file_token = ur.json()["data"]["file_token"]
+                    await client.patch(
+                        f"{FEISHU_BASE}/docx/v1/documents/{doc_id}/blocks/{block_id}",
+                        headers={"Authorization": f"Bearer {token}"},
+                        json={"replace_image": {"token": file_token}},
+                    )
+            except Exception:
+                pass
 
         doc_url = f"https://bytedance.feishu.cn/docx/{doc_id}"
         return doc_url
@@ -255,12 +256,10 @@ def _md_to_blocks(md: str) -> list[dict]:
         elif line == "---":
             blocks.append({"block_type": 22, "divider": {}})
         elif line.startswith("| ") and "|" in line[2:]:
-            # Collect table rows
             table_lines = []
             while i < len(lines) and lines[i].startswith("| "):
                 table_lines.append(lines[i])
                 i += 1
-            # Simple table handling: render each row as text for now
             if table_lines:
                 text = "\n".join(table_lines)
                 blocks.append({"block_type": 2, "text": {"elements": [{"text_run": {"content": text}}], "style": {}}})
@@ -268,7 +267,6 @@ def _md_to_blocks(md: str) -> list[dict]:
         elif line.startswith("- "):
             blocks.append({"block_type": 12, "bullet": {"elements": [{"text_run": {"content": line[2:]}}], "style": {}}})
         else:
-            # Collect consecutive text lines into one block
             text_lines = [line]
             while i + 1 < len(lines) and lines[i + 1].strip() and not lines[i + 1].startswith(("#", "-", "|", "---")):
                 i += 1

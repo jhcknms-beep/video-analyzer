@@ -152,6 +152,10 @@ async def get_results(job_id: str):
             "current_step": meta.current_step,
         })
 
+    # Enrich with display name
+    if meta.original_filename:
+        results["original_filename"] = meta.original_filename
+
     return JSONResponse(results)
 
 
@@ -328,6 +332,11 @@ async def export_to_feishu(job_id: str, req: FeishuExportRequest):
 
     if not results.get("analysis"):
         raise HTTPException(400, "No analysis data")
+
+    # Enrich with display name from meta
+    meta = await _job_manager.get_job(job_id)
+    if meta and meta.original_filename:
+        results["original_filename"] = meta.original_filename
 
     frames_dir = _file_store.frames_dir(job_id)
     try:

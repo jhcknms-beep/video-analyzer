@@ -126,7 +126,7 @@ export default function HomePage() {
                       </div>
                     ) : (
                       <div className="flex items-center gap-1 cursor-pointer" onClick={() => startRename(j)}>
-                        <span className="text-sm font-medium truncate" title={j.filename}>{j.filename}</span>
+                        <span className="text-sm font-medium truncate" title={(j.original_filename || j.filename)}>{(j.original_filename || j.filename)}</span>
                         <Pencil className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 shrink-0"/>
                       </div>
                     )}
@@ -146,7 +146,7 @@ export default function HomePage() {
           <div className="space-y-1.5">
             {activeJobs.map((j) => (
               <div key={j.job_id} className="bg-card border border-border/50 rounded-md flex items-center px-3 py-2.5 gap-3">
-                <span className="text-sm font-medium truncate flex-1" title={j.filename}>{j.filename}</span>
+                <span className="text-sm font-medium truncate flex-1" title={(j.original_filename || j.filename)}>{(j.original_filename || j.filename)}</span>
                 <div className="w-40 flex items-center gap-2">
                   <Progress value={j.progress_pct} className="h-1 flex-1"/>
                   <span className="text-[10px] text-muted-foreground w-8 text-right">{Math.round(j.progress_pct)}%</span>

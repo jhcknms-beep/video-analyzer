@@ -10,6 +10,7 @@ build/
 
 # Runtime data
 data/
+models/
 
 # Env
 .env*
@@ -17,6 +18,9 @@ data/
 # IDE
 .vscode/
 .idea/
+
+# Session logs
+*.jsonl
 
 # Misc
 .DS_Store

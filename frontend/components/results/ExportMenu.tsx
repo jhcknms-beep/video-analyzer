@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Download, FileJson, FileSpreadsheet, Cloud, Loader2 } from "lucide-react";
+import { Download, FileJson, FileSpreadsheet, Cloud, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,6 +11,7 @@ import {
 import type { AnalysisResult } from "@/lib/types";
 import { downloadJSON, downloadCSV } from "@/lib/export";
 import { exportFeishu } from "@/lib/api";
+import { toast } from "sonner";
 
 interface Props {
   result: AnalysisResult;
@@ -18,17 +19,35 @@ interface Props {
 }
 
 export function ExportMenu({ result, jobId }: Props) {
-  const [feishuLoading, setFeishuLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const handleFeishu = async () => {
-    setFeishuLoading(true);
+    setExporting(true);
+    toast("Creating Feishu document...", {
+      id: "feishu-export",
+      duration: Infinity,
+      icon: <Loader2 className="h-4 w-4 animate-spin text-teal-400" />,
+      style: { borderColor: "oklch(0.70 0.11 185 / 0.3)" },
+    });
     try {
       const res = await exportFeishu(jobId);
+      toast("Document ready", {
+        id: "feishu-export",
+        duration: 4000,
+        icon: <CheckCircle2 className="h-4 w-4 text-emerald-400" />,
+        style: { borderColor: "oklch(0.70 0.13 160 / 0.3)" },
+      });
       window.open(res.url, "_blank");
     } catch (err: any) {
-      alert("Feishu export failed: " + err.message);
+      toast("Export failed", {
+        id: "feishu-export",
+        duration: 5000,
+        description: err.message,
+        icon: <AlertCircle className="h-4 w-4 text-red-400" />,
+        style: { borderColor: "oklch(0.60 0.20 22 / 0.3)" },
+      });
     } finally {
-      setFeishuLoading(false);
+      setExporting(false);
     }
   };
 
@@ -39,8 +58,8 @@ export function ExportMenu({ result, jobId }: Props) {
         Export
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={handleFeishu} disabled={feishuLoading}>
-          {feishuLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Cloud className="h-4 w-4 mr-2" />}
+        <DropdownMenuItem onClick={handleFeishu} disabled={exporting}>
+          {exporting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Cloud className="h-4 w-4 mr-2" />}
           Lark Doc
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => downloadJSON(result, jobId)}>

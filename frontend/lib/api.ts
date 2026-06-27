@@ -29,7 +29,7 @@ export async function getStatus(ids?: string[]): Promise<{ jobs: import("./types
 }
 
 export async function getResults(jobId: string): Promise<import("./types").JobResult> {
-  const res = await fetch(`${API_BASE}/api/videos/${jobId}/results`);
+  const res = await fetch(`${API_BASE}/api/videos/${jobId}/results`, { headers: authHeaders() });
   if (!res.ok) throw new Error("Failed to fetch results");
   return res.json();
 }
@@ -83,13 +83,13 @@ export async function exportFeishu(jobId: string): Promise<{ url: string; messag
 }
 
 export async function startJob(jobId: string): Promise<void> {
-  await fetch(`${API_BASE}/api/videos/${jobId}/start`, { method: "POST" });
+  await fetch(`${API_BASE}/api/videos/${jobId}/start`, { method: "POST", headers: authHeaders() });
 }
 export async function startBatch(jobIds: string[]): Promise<void> {
   await fetch(`${API_BASE}/api/videos/start-batch`, { method: "POST", headers: authHeaders(), body: JSON.stringify({ job_ids: jobIds }) });
 }
 export async function pauseJob(jobId: string): Promise<void> {
-  await fetch(`${API_BASE}/api/videos/${jobId}/pause`, { method: "POST" });
+  await fetch(`${API_BASE}/api/videos/${jobId}/pause`, { method: "POST", headers: authHeaders() });
 }
 
 export async function renameJob(jobId: string, name: string): Promise<void> {
@@ -102,7 +102,7 @@ export async function renameJob(jobId: string, name: string): Promise<void> {
 }
 
 export async function deleteJob(jobId: string): Promise<void> {
-  const res = await fetch(`${API_BASE}/api/videos/${jobId}`, { method: "DELETE" });
+  const res = await fetch(`${API_BASE}/api/videos/${jobId}`, { method: "DELETE", headers: authHeaders() });
   if (!res.ok) throw new Error("Failed to delete job");
 }
 

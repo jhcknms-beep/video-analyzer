@@ -43,7 +43,20 @@ export default function RootLayout({
           <Nav />
           <main className="mx-auto max-w-7xl px-10 py-12">{children}</main>
         </AuthGuard>
-        <Toaster position="top-right" richColors closeButton />
+        <Toaster
+          position="top-right"
+          theme="dark"
+          closeButton
+          toastOptions={{
+            style: {
+              background: "oklch(0.17 0 0)",
+              border: "1px solid oklch(0.22 0 0)",
+              color: "oklch(0.96 0 0)",
+              fontSize: "13px",
+              borderRadius: "6px",
+            },
+          }}
+        />
       </body>
     </html>
   );

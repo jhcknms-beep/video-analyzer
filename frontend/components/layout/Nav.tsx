@@ -12,15 +12,20 @@ function useUnviewedCount() {
   useEffect(() => {
     const check = async () => {
       try {
-        const r = await fetch(`${API}/api/videos/status`);
-        const data = await r.json();
+        const token = localStorage.getItem("va_token") || "";
+        const [jr, vr] = await Promise.all([
+          fetch(`${API}/api/videos/status`, { headers: { Authorization: `Bearer ${token}` } }),
+          fetch(`${API}/api/auth/viewed`, { headers: { Authorization: `Bearer ${token}` } }),
+        ]);
+        const data = await jr.json();
+        const vdata = await vr.json();
         const completed = (data.jobs || []).filter((j: any) => j.status === "completed");
-        const viewed = JSON.parse(localStorage.getItem("va_viewed") || "[]");
+        const viewed = vdata.viewed || [];
         setCount(completed.filter((j: any) => !viewed.includes(j.job_id)).length);
       } catch {}
     };
     check();
-    const iv = setInterval(check, 10000);
+    const iv = setInterval(check, 15000);
     return () => clearInterval(iv);
   }, []);
   return count;
@@ -34,7 +39,7 @@ export function Nav() {
 
   useEffect(() => {
     const load = () => {
-      fetch(`${API}/api/models`)
+      fetch(`${API}/api/models`, { headers: { Authorization: `Bearer ${localStorage.getItem("va_token") || ""}` } })
         .then((r) => r.json())
         .then((d) => {
           setModels(d.models?.map((m: any) => m.name) || []);
@@ -82,6 +87,9 @@ export function Nav() {
               {models.map((m) => (<option key={m} value={m}>{m}</option>))}
             </select>
           )}
+          <Link href="/account" className="text-[11px] text-muted-foreground hover:text-foreground transition-colors">
+            {typeof window !== "undefined" ? localStorage.getItem("va_user") || "Account" : "Account"}
+          </Link>
           <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
             <span className={`inline-block h-2 w-2 rounded-full ${isConnected ? "bg-emerald-400 animate-pulse-dot" : "bg-red-400"}`} />
             {isConnected ? "Live" : "Offline"}

@@ -119,6 +119,7 @@ export interface AnalysisResult {
 export interface JobResult {
   job_id: string;
   filename: string;
+  original_filename: string;
   status: JobStatus;
   progress_pct: number;
   current_step: string;
@@ -134,6 +135,7 @@ export interface WSProgressMessage {
   type: "progress";
   job_id: string;
   filename: string;
+  original_filename: string;
   status: JobStatus;
   progress_pct: number;
   current_step: string;
