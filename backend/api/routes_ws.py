@@ -41,6 +41,7 @@ class WebSocketManager:
             "type": "progress",
             "job_id": meta.job_id,
             "filename": meta.original_filename,
+            "analysis_type": meta.analysis_type,
             "status": meta.status.value,
             "progress_pct": meta.progress_pct,
             "current_step": meta.current_step,
@@ -81,6 +82,7 @@ async def websocket_progress(ws: WebSocket):
             {
                 "job_id": j.job_id,
                 "filename": j.original_filename,
+                "analysis_type": j.analysis_type,
                 "status": j.status.value,
                 "progress_pct": j.progress_pct,
                 "current_step": j.current_step,

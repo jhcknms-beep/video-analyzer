@@ -67,7 +67,8 @@ export function Nav() {
             <span className="hidden sm:inline">Video Analyzer</span>
           </Link>
           <nav className="flex items-center gap-0.5">
-            <Link href="/" className="px-3 py-1.5 text-xs font-medium text-foreground/80 hover:text-foreground rounded transition-colors border-b-2 border-transparent hover:border-primary/50">Home</Link>
+            <Link href="/" className="px-3 py-1.5 text-xs font-medium text-foreground/80 hover:text-foreground rounded transition-colors border-b-2 border-transparent hover:border-primary/50">Video</Link>
+            <Link href="/images" className="px-3 py-1.5 text-xs font-medium text-foreground/80 hover:text-foreground rounded transition-colors border-b-2 border-transparent hover:border-primary/50">Image</Link>
             <Link href="/history" className="px-3 py-1.5 text-xs font-medium text-foreground/80 hover:text-foreground rounded transition-colors border-b-2 border-transparent hover:border-primary/50 relative">
               History
               {unviewed > 0 && (

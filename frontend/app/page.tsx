@@ -18,6 +18,7 @@ import type { WSProgressMessage, JobStatus } from "@/lib/types";
 export default function HomePage() {
   const { files, validFiles, isUploading, setIsUploading, addFiles, removeFile, clearFiles, inputRef } = useFileUpload();
   const { jobs } = useWebSocket();
+  const [videoMode, setVideoMode] = useState<"content" | "reverse">("content");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
@@ -40,29 +41,30 @@ export default function HomePage() {
   };
 
   // Pending: not started yet
-  const pendingJobs = jobs.filter((j) => j.status === "pending");
+  const videoJobs = jobs.filter((j: any) => (j.analysis_type || "video") === "video");
+  const pendingJobs = videoJobs.filter((j) => j.status === "pending");
   // Active: currently processing
-  const activeJobs = jobs.filter((j) => ["queued","extracting_frames","analyzing"].includes(j.status));
-  const pausedJobs = jobs.filter((j) => j.status === "paused");
+  const activeJobs = videoJobs.filter((j) => ["queued","extracting_frames","analyzing"].includes(j.status));
+  const pausedJobs = videoJobs.filter((j) => j.status === "paused");
   const allPending = [...pendingJobs, ...pausedJobs];
 
   const handleUpload = useCallback(async () => {
     if (validFiles.length === 0) { toast.error("No files selected"); return; }
     setIsUploading(true);
     try {
-      await uploadVideos(validFiles.map((f) => f.file));
-      toast.success(`Added ${validFiles.length} video(s) to pending list`);
+      await uploadVideos(validFiles.map((f) => f.file), videoMode);
+      toast.success(`Added ${validFiles.length} video(s)`);
       clearFiles();
     } catch (err: any) { toast.error(err.message); }
     setIsUploading(false);
-  }, [validFiles, setIsUploading, clearFiles]);
+  }, [validFiles, setIsUploading, clearFiles, videoMode]);
 
   const handleUrlDownload = useCallback(async (url: string) => {
     setIsDownloading(true);
     try {
       const r = await downloadFromUrl(url);
       toast.success(r.message);
-    } catch (err: any) { throw err; }
+    } catch (err: any) { toast.error(err.message); }
     setIsDownloading(false);
   }, []);
 
@@ -82,8 +84,12 @@ export default function HomePage() {
     <div className="space-y-8">
       <section className="flex items-end justify-between">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">Video Analyzer</h1>
+          <h1 className="text-xl font-semibold tracking-tight">Video Analysis</h1>
           <p className="text-xs text-muted-foreground mt-0.5">Upload videos or paste links to analyze</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant={videoMode === "content" ? "default" : "outline"} size="sm" onClick={() => setVideoMode("content")}>Content</Button>
+          <Button variant={videoMode === "reverse" ? "default" : "outline"} size="sm" onClick={() => setVideoMode("reverse")}>Prompt</Button>
         </div>
         <div className="flex items-center gap-3 text-xs">
           <span className="flex items-center gap-1.5 text-muted-foreground"><span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40"/>{pendingJobs.length} pending</span>

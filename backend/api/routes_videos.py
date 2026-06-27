@@ -59,8 +59,8 @@ def init(job_manager, file_store) -> None:
 # ── Upload ───────────────────────────────────────────
 
 @router.post("/upload", response_model=UploadResponse)
-async def upload_videos(files: list[UploadFile] = File(...)):
-    """Upload one or more video files. Returns created job metadata."""
+async def upload_videos(files: list[UploadFile] = File(...), mode: str = Form("content")):
+    """Upload one or more video files. mode: 'content' or 'reverse'"""
     if not files:
         raise HTTPException(400, "No files provided")
 
@@ -97,6 +97,8 @@ async def upload_videos(files: list[UploadFile] = File(...)):
             original_filename=f.filename,
             file_size_bytes=file_size,
         )
+        meta.analysis_mode = mode
+        await _file_store.save_progress(meta.job_id, meta)
         jobs.append(meta)
 
     return UploadResponse(jobs=jobs)
@@ -116,9 +118,9 @@ async def get_status(ids: Optional[str] = Query(None)):
         if job.status == JobStatus.COMPLETED and job.video_duration_seconds is None:
             r = await _file_store.load_results(job.job_id)
             if r:
-                if r.get("video_duration_seconds"):
+                if r.get("video_duration_seconds") is not None:
                     job.video_duration_seconds = r["video_duration_seconds"]
-                if r.get("processing_time_seconds"):
+                if r.get("processing_time_seconds") is not None:
                     job.processing_time_seconds = r["processing_time_seconds"]
                 if job.completed_at is None:
                     p = _file_store._read_json(_file_store.job_dir(job.job_id) / "progress.json")
@@ -152,9 +154,11 @@ async def get_results(job_id: str):
             "current_step": meta.current_step,
         })
 
-    # Enrich with display name
+    # Enrich with display name and filename
     if meta.original_filename:
         results["original_filename"] = meta.original_filename
+    if not results.get("filename") and meta.filename:
+        results["filename"] = meta.filename
 
     return JSONResponse(results)
 

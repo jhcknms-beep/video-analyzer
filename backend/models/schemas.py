@@ -134,6 +134,8 @@ class JobMeta(BaseModel):
     video_duration_seconds: Optional[float] = None
     processing_time_seconds: Optional[float] = None
     completed_at: Optional[str] = None
+    analysis_type: str = "video"  # "video" or "image"
+    analysis_mode: str = "content"  # "content" or "reverse"
     status: JobStatus = JobStatus.QUEUED
     progress_pct: float = 0.0
     current_step: str = ""

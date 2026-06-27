@@ -18,6 +18,8 @@ interface Job {
   video_duration_seconds: number | null;
   processing_time_seconds: number | null;
   completed_at: string | null;
+  analysis_type: string;
+  analysis_mode: string;
   error: string | null;
 }
 
@@ -45,6 +47,8 @@ export default function HistoryPage() {
       .then(r => r.json()).then(d => setViewed(d.viewed || [])).catch(() => {});
   }, [loading]);
   const [viewGrid, setViewGrid] = useState(true);
+  const [filter, setFilter] = useState<"all" | "video" | "image">("all");
+  const [modeFilter, setModeFilter] = useState<"all" | "content" | "prompt">("all");
   const [search, setSearch] = useState("");
   const [editId, setEditId] = useState<string | null>(null);
   const [editVal, setEditVal] = useState("");
@@ -91,8 +95,10 @@ export default function HistoryPage() {
 
   const completed = jobs.filter((j) => j.status === "completed");
   const failed = jobs.filter((j) => j.status === "failed");
-  const allDone = [...failed, ...completed]; // Failed first, then completed. Newest first via sort
-  allDone.sort((a, b) => (b.created_at || "").localeCompare(a.created_at || ""));
+  const allDone = [...failed, ...completed]
+    .filter(j => filter === "all" || (j.analysis_type || "video") === filter)
+    .filter(j => modeFilter === "all" || (j.analysis_mode || "content") === modeFilter || (modeFilter === "prompt" && j.analysis_mode === "reverse"))
+    .sort((a, b) => (b.created_at || "").localeCompare(a.created_at || ""));
 
   const filtered = search.trim()
     ? allDone.filter(j => (j.original_filename || j.filename).toLowerCase().includes(search.toLowerCase()))
@@ -105,6 +111,15 @@ export default function HistoryPage() {
           <Link href="/"><Button variant="ghost" size="icon"><ArrowLeft className="h-5 w-5" /></Button></Link>
           <h1 className="text-xl font-semibold">History</h1>
           <span className="text-sm text-muted-foreground">{completed.length} done, {failed.length} failed</span>
+        </div>
+        <div className="flex items-center gap-1 bg-muted rounded-md p-0.5">
+          {(["all","video","image"] as const).map(t => (
+            <button key={t} onClick={() => setFilter(t)} className={`px-2.5 py-1 text-[11px] rounded font-medium transition-colors ${filter === t ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>{t === "all" ? "All" : t === "video" ? "Video" : "Image"}</button>
+          ))}
+          <span className="w-px h-4 bg-border mx-1"/>
+          {(["all","content","prompt"] as const).map(t => (
+            <button key={t} onClick={() => setModeFilter(t)} className={`px-2 py-1 text-[10px] rounded font-medium transition-colors ${modeFilter === t ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>{t === "all" ? "All" : t === "content" ? "Content" : "Prompt"}</button>
+          ))}
         </div>
         <input
           type="text" placeholder="Search..." value={search}
