@@ -30,7 +30,7 @@ interface Props {
 }
 
 export function StatusBadge({ status, currentStep, dimension }: Props) {
-  const cfg = STATUS_CONFIG[status];
+  const cfg = STATUS_CONFIG[status] || { label: status || "Unknown", variant: "secondary" as const };
   const stepLabel = currentStep ? STEP_LABELS[currentStep] || currentStep : "";
 
   return (

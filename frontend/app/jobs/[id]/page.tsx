@@ -2,15 +2,120 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Loader2, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Loader2, AlertTriangle, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { AnalysisResults } from "@/components/results/AnalysisResults";
 import { ExportMenu } from "@/components/results/ExportMenu";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
 import { getResults } from "@/lib/api";
 import type { JobResult, AnalysisResult } from "@/lib/types";
+
+function PromptCard({ name, data }: { name: string; data: any }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <Card>
+      <CardHeader className="py-3 px-4 flex flex-row items-center justify-between">
+        <CardTitle className="text-base">{name}</CardTitle>
+        <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs" onClick={() => { navigator.clipboard.writeText(data.prompt || ""); setCopied(true); setTimeout(() => setCopied(false), 2000); }}>
+          {copied ? <><Check className="h-3 w-3"/>Copied</> : <><Copy className="h-3 w-3"/>Copy</>}
+        </Button>
+      </CardHeader>
+      <CardContent className="p-4 pt-0 space-y-2">
+        <p className="text-sm text-muted-foreground whitespace-pre-wrap">{data.prompt || "N/A"}</p>
+        {(data.negative_prompt || data.style_note) && <p className="text-xs text-destructive">{data.negative_prompt ? `Negative: ${data.negative_prompt}` : `Style: ${data.style_note}`}</p>}
+      </CardContent>
+    </Card>
+  );
+}
+
+function ImageAnalysisResult({ analysis, filename, jobId }: { analysis: any; filename: string; jobId: string }) {
+  const bp = analysis.basic_params || {};
+  // Find the actual uploaded filename from the parent result
+  const imgUrl = `http://localhost:8001/api/images/file/${filename}`;
+  const cd = analysis.content_desc || {};
+  const ec = analysis.ecommerce || {};
+  const mk = analysis.marketing || {};
+  // Detect reverse mode and model type
+  const isImageReverse = typeof analysis.nano_banana_pro === "object";
+  const isVideoReverse = typeof analysis.seedance_2 === "object";
+  const isReverse = isImageReverse || isVideoReverse;
+
+  if (isReverse) {
+    const models = isVideoReverse
+      ? [["Seedance 2.0", "seedance_2"], ["Veo 3", "veo_3"], ["Sora 2", "sora_2"]]
+      : [["Nano Banana Pro", "nano_banana_pro"], ["GPT Image 2", "gpt_image_2"], ["Seedream", "seedream"], ["Flux", "flux"], ["Qwen-Image", "qwen_image"], ["ZImage", "zimage"]];
+    return (
+      <div className="space-y-3">
+        <h2 className="text-lg font-semibold">Prompt Reverse Engineering</h2>
+        {models.map(([name, key]) => (
+          <PromptCard key={key} name={name} data={analysis[key] || {}} />
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <Card>
+        <CardContent className="p-4 flex justify-center">
+          <img src={imgUrl} alt="Analyzed" className="max-h-80 object-contain rounded-lg" />
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader className="py-3 px-4"><CardTitle className="text-base">{filename}</CardTitle></CardHeader>
+        <CardContent className="p-4 pt-0 space-y-3">
+          <div className="grid grid-cols-2 gap-2 text-sm">
+            <div><span className="text-muted-foreground">Resolution:</span> {bp.resolution||"?"}</div>
+            <div><span className="text-muted-foreground">Format:</span> {bp.format||"?"}</div>
+            <div><span className="text-muted-foreground">Ratio:</span> {bp.aspect_ratio||"?"}</div>
+            <div><span className="text-muted-foreground">Quality:</span> {bp.quality_assessment||"?"}/5</div>
+            <div><span className="text-muted-foreground">Color:</span> {bp.color_profile||"?"}</div>
+          </div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader className="py-3 px-4"><CardTitle className="text-base">Content</CardTitle></CardHeader>
+        <CardContent className="p-4 pt-0 text-sm space-y-1">
+          <p><strong>Subject:</strong> {cd.main_subject||"?"}</p>
+          <p><strong>Scene:</strong> {cd.scene_type||"?"}</p>
+          <p><strong>Style:</strong> {cd.visual_style||"?"}</p>
+          {cd.text_overlays?.length > 0 && <p><strong>Text:</strong> {cd.text_overlays.join(", ")}</p>}
+          {cd.props_elements?.length > 0 && <p><strong>Props:</strong> {cd.props_elements.join(", ")}</p>}
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader className="py-3 px-4"><CardTitle className="text-base">E-Commerce Assessment</CardTitle></CardHeader>
+        <CardContent className="p-4 pt-0 space-y-2">
+          <div className="grid grid-cols-2 gap-2 text-sm">
+            <div><span className="text-muted-foreground">Category:</span> {ec.product_category||"?"}</div>
+            <div><span className="text-muted-foreground">Platform:</span> {ec.target_platform||"?"}</div>
+            <div><span className="text-muted-foreground">Type:</span> {ec.listing_type||"?"}</div>
+            <div><span className="text-muted-foreground">Score:</span> <Badge variant="default" className="text-xs">{ec.conversion_potential_score||"?"}/5</Badge></div>
+          </div>
+          {ec.improvement_suggestions?.length > 0 && (
+            <div><h4 className="text-sm font-medium mb-1">Suggestions</h4>
+              <ul className="list-disc list-inside text-sm text-muted-foreground">
+                {ec.improvement_suggestions.map((s: string, i: number) => <li key={i}>{s}</li>)}
+              </ul>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader className="py-3 px-4"><CardTitle className="text-base">Marketing</CardTitle></CardHeader>
+        <CardContent className="p-4 pt-0 text-sm space-y-1">
+          <p><strong>Brand:</strong> {mk.brand_positioning||"?"}</p>
+          <p><strong>Emotion:</strong> {mk.emotional_appeal||"?"}</p>
+          <p><strong>Audience:</strong> {mk.target_audience||"?"}</p>
+          <p><strong>Advantage:</strong> {mk.competitive_advantage||"?"}</p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
 
 function AnalysisResultsWithFrames({ jobId, result }: { jobId: string; result: AnalysisResult }) {
   const [frameData, setFrameData] = useState<{url:string;w:number;h:number}[]>([]);
@@ -155,8 +260,14 @@ export default function JobDetailPage() {
       {/* Results */}
       {result?.analysis && (
         <>
-          <AnalyticsSummary result={result.analysis} />
-          <AnalysisResultsWithFrames jobId={id} result={result.analysis} />
+          {result.analysis.content_and_tags ? (
+            <>
+              <AnalyticsSummary result={result.analysis} />
+              <AnalysisResultsWithFrames jobId={id} result={result.analysis} />
+            </>
+          ) : (
+            <ImageAnalysisResult analysis={result.analysis} filename={result.filename || ""} jobId={id} />
+          )}
         </>
       )}
     </div>

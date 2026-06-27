@@ -136,6 +136,7 @@ export interface WSProgressMessage {
   job_id: string;
   filename: string;
   original_filename: string;
+  analysis_type: string;
   status: JobStatus;
   progress_pct: number;
   current_step: string;

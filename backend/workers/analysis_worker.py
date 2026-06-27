@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import time
 from datetime import datetime, timezone
 
@@ -108,8 +109,21 @@ async def process_job(
     if not frame_paths:
         raise RuntimeError("No frames extracted from video")
     images_b64 = [encode_frame_base64(p) for p in frame_paths]
+    analysis_mode = getattr(meta, "analysis_mode", "") or "content"
 
-    # ── Step 3: Run 3 LLM groups sequentially (Ollama serves one at a time) ──
+    # ── Step 3: Check if reverse prompt mode ──
+    if analysis_mode == "reverse":
+        _check_cancelled(job_manager, job_id)
+        from services.image_prompts import SYSTEM_PROMPT_VIDEO_REVERSE, build_video_reverse_prompt
+        resp = await llm_client.chat_with_retry(
+            SYSTEM_PROMPT_VIDEO_REVERSE, build_video_reverse_prompt(), images_b64,
+        )
+        result = {"analysis": json.loads(extract_json(resp)), "mode": "reverse", "type": "video", "status": "completed", "job_id": job_id, "filename": meta.filename, "video_duration_seconds": duration, "processing_time_seconds": round(time.time() - start_time, 1)}
+        await file_store.save_results(job_id, result)
+        await job_manager.update_status(job_id, status=JobStatus.COMPLETED, progress_pct=100, current_step="completed")
+        return
+
+    # ── Step 3: Run 3 LLM groups sequentially ──
     _check_cancelled(job_manager, job_id)
     parsed: dict = {}
 

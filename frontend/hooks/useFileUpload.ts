@@ -2,7 +2,8 @@
 
 import { useState, useCallback, useRef } from "react";
 
-const ACCEPTED_TYPES = ["video/mp4", "video/quicktime", "video/x-msvideo", "video/webm"];
+const VIDEO_TYPES = ["video/mp4", "video/quicktime", "video/x-msvideo", "video/webm"];
+const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/bmp", "image/gif", "image/svg+xml"];
 const MAX_SIZE_MB = 500;
 
 export interface UploadFile {
@@ -12,14 +13,15 @@ export interface UploadFile {
   error?: string;
 }
 
-export function useFileUpload() {
+export function useFileUpload(acceptImages: boolean = false) {
   const [files, setFiles] = useState<UploadFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const accepted = acceptImages ? IMAGE_TYPES : VIDEO_TYPES;
 
   const validateFile = (file: File): string | null => {
-    if (!ACCEPTED_TYPES.includes(file.type)) {
-      return `不支持的格式: ${file.type || "未知"}`;
+    if (!accepted.includes(file.type)) {
+      return `Unsupported format: ${file.type || "unknown"}`;
     }
     if (file.size / (1024 * 1024) > MAX_SIZE_MB) {
       return `文件过大: ${(file.size / (1024 * 1024)).toFixed(0)}MB > ${MAX_SIZE_MB}MB`;

@@ -22,6 +22,7 @@ from api.routes_videos import router as videos_router, init as videos_init
 from api.routes_ws import router as ws_router, init as ws_init, WebSocketManager
 from api.routes_models import router as models_router
 from api.routes_auth import router as auth_router
+from api.routes_images import router as images_router, init as images_init
 from middleware.auth_middleware import AuthMiddleware
 
 
@@ -41,6 +42,7 @@ async def lifespan(app: FastAPI):
 
     # Inject dependencies into route modules
     videos_init(app.state.job_manager, app.state.file_store)
+    images_init(app.state.job_manager, app.state.file_store)
     ws_init(app.state.ws_manager, app.state.job_manager)
 
     # Recover jobs that were interrupted by previous shutdown
@@ -98,6 +100,7 @@ app.include_router(videos_router)
 app.include_router(ws_router)
 app.include_router(models_router)
 app.include_router(auth_router)
+app.include_router(images_router)
 
 
 @app.get("/health")

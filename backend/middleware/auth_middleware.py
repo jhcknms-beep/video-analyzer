@@ -13,8 +13,10 @@ def _is_public(path: str) -> bool:
         return True
     if path.startswith("/ws/"):
         return True
-    # Frame images are served directly - allow public access
+    # Frame images and uploaded images are served directly
     if "/frames/" in path and path.endswith(".jpg"):
+        return True
+    if path.startswith("/api/images/file/"):
         return True
     return False
 

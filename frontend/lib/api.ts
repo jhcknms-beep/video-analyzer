@@ -5,9 +5,10 @@ function authHeaders(): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } : { "Content-Type": "application/json" };
 }
 
-export async function uploadVideos(files: File[]): Promise<{ jobs: import("./types").JobMeta[] }> {
+export async function uploadVideos(files: File[], mode: string = "content"): Promise<{ jobs: import("./types").JobMeta[] }> {
   const form = new FormData();
   files.forEach((f) => form.append("files", f));
+  form.append("mode", mode);
 
   const res = await fetch(`${API_BASE}/api/videos/upload`, {
     method: "POST",
@@ -83,13 +84,16 @@ export async function exportFeishu(jobId: string): Promise<{ url: string; messag
 }
 
 export async function startJob(jobId: string): Promise<void> {
-  await fetch(`${API_BASE}/api/videos/${jobId}/start`, { method: "POST", headers: authHeaders() });
+  const res = await fetch(`${API_BASE}/api/videos/${jobId}/start`, { method: "POST", headers: authHeaders() });
+  if (!res.ok) throw new Error("Start failed");
 }
 export async function startBatch(jobIds: string[]): Promise<void> {
-  await fetch(`${API_BASE}/api/videos/start-batch`, { method: "POST", headers: authHeaders(), body: JSON.stringify({ job_ids: jobIds }) });
+  const res = await fetch(`${API_BASE}/api/videos/start-batch`, { method: "POST", headers: authHeaders(), body: JSON.stringify({ job_ids: jobIds }) });
+  if (!res.ok) throw new Error("Batch start failed");
 }
 export async function pauseJob(jobId: string): Promise<void> {
-  await fetch(`${API_BASE}/api/videos/${jobId}/pause`, { method: "POST", headers: authHeaders() });
+  const res = await fetch(`${API_BASE}/api/videos/${jobId}/pause`, { method: "POST", headers: authHeaders() });
+  if (!res.ok) throw new Error("Pause failed");
 }
 
 export async function renameJob(jobId: string, name: string): Promise<void> {
